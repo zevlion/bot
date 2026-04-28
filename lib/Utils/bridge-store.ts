@@ -1,139 +1,246 @@
-import { Buffer } from 'node:buffer'
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import type { AuthenticationState } from '../Types/index.ts'
+import type { AuthenticationState } from "../Types/index.ts";
+
+// Minimal DB adapter interface — implemented by both Bun and Node drivers
+// Covers every type both bun:sqlite and better-sqlite3 accept as a binding
+type SqlBinding =
+  | string
+  | number
+  | bigint
+  | boolean
+  | null
+  | Uint8Array
+  | Buffer;
+
+interface DbStatement {
+  run(...args: SqlBinding[]): unknown;
+  get(...args: SqlBinding[]): unknown;
+  all(...args: SqlBinding[]): unknown[];
+}
+
+interface DbAdapter {
+  exec(sql: string): void;
+  prepare(sql: string): DbStatement;
+  close(): void;
+}
+
+async function openDatabase(dbPath: string): Promise<DbAdapter> {
+  // Bun exposes globalThis.Bun
+  if (typeof globalThis.Bun !== "undefined") {
+    // Dynamic import keeps this tree-shakeable in Node environments
+    const { Database } = await import("bun:sqlite");
+    const db = new Database(dbPath, { create: true });
+
+    // Wrap Bun's API to match DbAdapter
+    return {
+      exec: (sql: string) => db.run(sql),
+      prepare: (sql: string) => {
+        const stmt = db.prepare(sql);
+        return {
+          run: (...args: any[]) => stmt.run(...args),
+          get: (...args: any[]) => stmt.get(...args),
+          all: (...args: any[]) => stmt.all(...args),
+        };
+      },
+      close: () => db.close(),
+    };
+  }
+
+  // Node.js — requires: npm i better-sqlite3 / yarn add better-sqlite3
+  const BetterSqlite3 = (await import("better-sqlite3")).default;
+  const db = new BetterSqlite3(dbPath);
+
+  return {
+    exec: (sql: string) => db.exec(sql),
+    prepare: (sql: string) => {
+      const stmt = db.prepare(sql);
+      return {
+        run: (...args: unknown[]) => stmt.run(...args),
+        get: (...args: unknown[]) => stmt.get(...args),
+        all: (...args: unknown[]) => stmt.all(...args),
+      };
+    },
+    close: () => db.close(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Bridge store
+// ---------------------------------------------------------------------------
 
 /**
- * Creates a file-based store for the WASM bridge.
+ * Creates a SQLite-backed store for the WASM bridge.
  *
- * Each (store, key) pair maps to a file: `<folder>/<store>-<key>.bin`
+ * Schema: a single `kv` table keyed by (store, key) → BLOB value.
  *
- * Uses a write-through in-memory cache to avoid redundant disk reads.
- * Writes go to both cache and disk. Reads hit cache first, disk on miss.
- *
- * @param folder Directory to store bridge state files
+ * Behaviour preserved from the file-based implementation:
+ *  - Write-through in-memory LRU cache (5 000 entries)
+ *  - Critical stores (session / identity / device) are written synchronously
+ *    (WAL mode + synchronous=NORMAL gives adequate crash safety)
+ *  - Non-critical writes are coalesced with a 50 ms debounce
+ *  - flush() drains all pending debounced writes
  */
-export async function useBridgeStore(folder: string): Promise<NonNullable<AuthenticationState['store']>> {
-	await mkdir(folder, { recursive: true })
+export async function useBridgeStore(
+  dbFile = "auth.db",
+): Promise<NonNullable<AuthenticationState["store"]>> {
+  const db = await openDatabase(dbFile);
 
-	// Write-through cache with LRU eviction to bound memory
-	const MAX_CACHE_ENTRIES = 5000
-	const cache = new Map<string, Uint8Array>()
-	const touchCache = (key: string, value: Uint8Array) => {
-		// LRU: delete + re-insert moves to end of insertion order
-		cache.delete(key)
-		cache.set(key, value)
-		// Evict oldest entries if over limit
-		if (cache.size > MAX_CACHE_ENTRIES) {
-			const first = cache.keys().next().value!
-			cache.delete(first)
-		}
-	}
+  // WAL mode for better concurrent read performance and crash safety
+  db.exec(`PRAGMA journal_mode = WAL`);
+  db.exec(`PRAGMA synchronous = NORMAL`);
 
-	const filePath = (store: string, key: string) => join(folder, `${store}-${encodeURIComponent(key)}.bin`)
+  db.exec(`
+		CREATE TABLE IF NOT EXISTS kv (
+			store TEXT NOT NULL,
+			key   TEXT NOT NULL,
+			value BLOB NOT NULL,
+			PRIMARY KEY (store, key)
+		)
+	`);
 
-	// Batch write queue: coalesces rapid writes to the same key
-	const pendingWrites = new Map<string, { path: string; value: Uint8Array; timer: ReturnType<typeof setTimeout> }>()
-	const WRITE_DELAY_MS = 50
+  const stmtGet = db.prepare(
+    `SELECT value FROM kv WHERE store = ? AND key = ?`,
+  );
+  const stmtSet =
+    db.prepare(`INSERT INTO kv (store, key, value) VALUES (?, ?, ?)
+	                               ON CONFLICT (store, key) DO UPDATE SET value = excluded.value`);
+  const stmtDelete = db.prepare(`DELETE FROM kv WHERE store = ? AND key = ?`);
 
-	const flushWrite = async (cacheKey: string) => {
-		const pending = pendingWrites.get(cacheKey)
-		if (!pending) return
-		clearTimeout(pending.timer)
-		pendingWrites.delete(cacheKey)
-		try {
-			await writeFile(pending.path, pending.value)
-		} catch {
-			// Ignore — folder may have been deleted during cleanup
-		}
-	}
+  // ------------------------------------------------------------------
+  // LRU write-through cache
+  // ------------------------------------------------------------------
 
-	const flushAll = async () => {
-		const keys = [...pendingWrites.keys()]
-		await Promise.all(keys.map(flushWrite))
-	}
+  const MAX_CACHE_ENTRIES = 5_000;
+  const cache = new Map<string, Uint8Array>();
 
-	return {
-		async get(store: string, key: string): Promise<Uint8Array | null> {
-			const cacheKey = `${store}\0${key}`
+  const touchCache = (cacheKey: string, value: Uint8Array) => {
+    cache.delete(cacheKey);
+    cache.set(cacheKey, value);
+    if (cache.size > MAX_CACHE_ENTRIES) {
+      cache.delete(cache.keys().next().value!);
+    }
+  };
 
-			// Check cache first
-			const cached = cache.get(cacheKey)
-			if (cached) return cached
+  // ------------------------------------------------------------------
+  // Debounced write queue for non-critical stores
+  // ------------------------------------------------------------------
 
-			const pending = pendingWrites.get(cacheKey)
-			if (pending) return pending.value
+  const WRITE_DELAY_MS = 50;
 
-			try {
-				const data = await readFile(filePath(store, key))
-				const arr = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
-				touchCache(cacheKey, arr)
-				return arr
-			} catch {
-				return null
-			}
-		},
+  interface Pending {
+    store: string;
+    key: string;
+    value: Uint8Array;
+    timer: ReturnType<typeof setTimeout>;
+  }
 
-		async set(store: string, key: string, value: Uint8Array): Promise<void> {
-			const cacheKey = `${store}\0${key}`
+  const pendingWrites = new Map<string, Pending>();
 
-			// Skip write if value is identical to cached version
-			const prev = cache.get(cacheKey)
-			if (prev && Buffer.from(prev).equals(Buffer.from(value))) {
-				return
-			}
+  const flushWrite = (cacheKey: string) => {
+    const pending = pendingWrites.get(cacheKey);
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    pendingWrites.delete(cacheKey);
+    stmtSet.run(pending.store, pending.key, pending.value);
+  };
 
-			touchCache(cacheKey, value)
+  const flushAll = () => {
+    for (const cacheKey of [...pendingWrites.keys()]) {
+      flushWrite(cacheKey);
+    }
+  };
 
-			// Signal sessions and identity keys must be flushed immediately —
-			// losing a ratchet step on crash causes undecryptable messages.
-			const critical = store === 'session' || store === 'identity' || store === 'device'
-			if (critical) {
-				const existing = pendingWrites.get(cacheKey)
-				if (existing) {
-					clearTimeout(existing.timer)
-					pendingWrites.delete(cacheKey)
-				}
+  // ------------------------------------------------------------------
+  // Store implementation
+  // ------------------------------------------------------------------
 
-				try {
-					await writeFile(filePath(store, key), value)
-				} catch {
-					// Directory may have been removed during shutdown
-				}
+  return {
+    async get(store: string, key: string): Promise<Uint8Array | null> {
+      const cacheKey = `${store}\0${key}`;
 
-				return
-			}
+      const cached = cache.get(cacheKey);
+      if (cached) return cached;
 
-			// Non-critical writes: coalesce rapid writes to the same key
-			const existing = pendingWrites.get(cacheKey)
-			if (existing) {
-				clearTimeout(existing.timer)
-			}
+      const pending = pendingWrites.get(cacheKey);
+      if (pending) return pending.value;
 
-			const path = filePath(store, key)
-			const timer = setTimeout(() => void flushWrite(cacheKey), WRITE_DELAY_MS)
-			timer.unref() // Don't keep the process alive for debounced writes
-			pendingWrites.set(cacheKey, { path, value, timer })
-		},
+      const row = stmtGet.get(store, key) as { value: Uint8Array } | undefined;
+      if (!row) return null;
 
-		async delete(store: string, key: string): Promise<void> {
-			const cacheKey = `${store}\0${key}`
-			cache.delete(cacheKey)
+      // SQLite drivers return Buffer (Node) or Uint8Array (Bun); normalise
+      const arr =
+        row.value instanceof Uint8Array
+          ? row.value
+          : new Uint8Array(
+              (row.value as Buffer).buffer,
+              (row.value as Buffer).byteOffset,
+              (row.value as Buffer).byteLength,
+            );
 
-			// Cancel pending write
-			const existing = pendingWrites.get(cacheKey)
-			if (existing) {
-				clearTimeout(existing.timer)
-				pendingWrites.delete(cacheKey)
-			}
+      touchCache(cacheKey, arr);
+      return arr;
+    },
 
-			try {
-				await unlink(filePath(store, key))
-			} catch {
-				// ignore if file doesn't exist
-			}
-		},
+    async set(store: string, key: string, value: Uint8Array): Promise<void> {
+      const cacheKey = `${store}\0${key}`;
 
-		flush: flushAll
-	}
+      // Skip identical writes
+      const prev = cache.get(cacheKey);
+      if (
+        prev &&
+        prev.length === value.length &&
+        prev.every((b, i) => b === value[i])
+      ) {
+        return;
+      }
+
+      touchCache(cacheKey, value);
+
+      // Critical stores: write immediately, bypass debounce
+      const critical =
+        store === "session" || store === "identity" || store === "device";
+      if (critical) {
+        const existing = pendingWrites.get(cacheKey);
+        if (existing) {
+          clearTimeout(existing.timer);
+          pendingWrites.delete(cacheKey);
+        }
+        stmtSet.run(store, key, value);
+        return;
+      }
+
+      // Non-critical: coalesce rapid writes
+      const existing = pendingWrites.get(cacheKey);
+      if (existing) {
+        clearTimeout(existing.timer);
+      }
+
+      const timer = setTimeout(() => flushWrite(cacheKey), WRITE_DELAY_MS);
+      if (typeof timer === "object" && "unref" in timer) {
+        (timer as NodeJS.Timeout).unref();
+      }
+      pendingWrites.set(cacheKey, { store, key, value, timer });
+    },
+
+    async delete(store: string, key: string): Promise<void> {
+      const cacheKey = `${store}\0${key}`;
+      cache.delete(cacheKey);
+
+      const existing = pendingWrites.get(cacheKey);
+      if (existing) {
+        clearTimeout(existing.timer);
+        pendingWrites.delete(cacheKey);
+      }
+
+      stmtDelete.run(store, key);
+    },
+
+    /**
+     * Flush all pending debounced writes and optionally close the DB.
+     * Pass `{ close: true }` during shutdown to release the file handle.
+     */
+    async flush(opts?: { close?: boolean }): Promise<void> {
+      flushAll();
+      if (opts?.close) db.close();
+    },
+  };
 }

@@ -1,3 +1,5 @@
 node_modules
-auth
+*.db
+*.db-shm
+*.db-wal
 logs.txt
