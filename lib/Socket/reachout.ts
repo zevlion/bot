@@ -9,10 +9,10 @@ import {
   type ReachoutTimelockState,
 } from "../Types/Reachout.ts";
 
-/** Wire shape from `xwa2_fetch_account_reachout_timelock`. */
+
 export interface ReachoutTimelockWire {
   is_active?: boolean;
-  /** Unix seconds as string. `"0"` or absent → cooldown not set. */
+  
   time_enforcement_ends?: string;
   enforcement_type?: string;
 }

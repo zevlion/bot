@@ -23,11 +23,11 @@ import type {
 import type { ConnectionState } from "./State.ts";
 
 export type BaileysEventMap = {
-  /** connection state has been updated -- WS closed, opened, connecting etc. */
+  
   "connection.update": Partial<ConnectionState>;
-  /** credentials updated -- some metadata, keys or something */
+  
   "creds.update": Partial<AuthenticationCreds>;
-  /** set chats (history sync), everything is reverse chronologically sorted */
+  
   "messaging-history.set": {
     chats: Chat[];
     contacts: Contact[];
@@ -38,14 +38,14 @@ export type BaileysEventMap = {
     syncType?: proto.HistorySync.HistorySyncType | null;
     peerDataRequestSessionId?: string | null;
   };
-  /** upsert chats */
+  
   "chats.upsert": Chat[];
-  /** update the given chats */
+  
   "chats.update": ChatUpdate[];
   "lid-mapping.update": LIDMapping;
-  /** delete chats with given ID */
+  
   "chats.delete": string[];
-  /** presence of contact in a chat updated */
+  
   "presence.update": {
     id: string;
     presences: { [participant: string]: PresenceData };
@@ -71,7 +71,7 @@ export type BaileysEventMap = {
     type: MessageUpsertType;
     requestId?: string;
   };
-  /** message was reacted to. If reaction was removed -- then "reaction.text" will be falsey */
+  
   "messages.reaction": { key: WAMessageKey; reaction: proto.IReaction }[];
 
   "message-receipt.update": MessageUserReceiptUpdate[];
@@ -90,7 +90,7 @@ export type BaileysEventMap = {
   "group-participants.update": {
     id: string;
     author: string;
-    /** PN counterpart of `author` when the group is LID-addressed. baileyrs-only extension. */
+    
     authorPn?: string;
     participants: GroupParticipant[];
     action: ParticipantAction;
@@ -104,7 +104,7 @@ export type BaileysEventMap = {
     action: RequestJoinAction;
     method: RequestJoinMethod;
   };
-  /*	update the labels assigned to a group participant */
+  
   "group.member-tag.update": {
     groupId: string;
     participant: string;
@@ -116,7 +116,7 @@ export type BaileysEventMap = {
   "blocklist.set": { blocklist: string[] };
   "blocklist.update": { blocklist: string[]; type: "add" | "remove" };
 
-  /** Receive an update on a call, including when the call was received, rejected, accepted */
+  
   call: WACallEvent[];
   "labels.edit": Label;
   "labels.association": {
@@ -124,7 +124,7 @@ export type BaileysEventMap = {
     type: "add" | "remove";
   };
 
-  /** Newsletter-related events */
+  
   "newsletter.reaction": {
     id: string;
     server_id: string;
@@ -140,7 +140,7 @@ export type BaileysEventMap = {
   };
   "newsletter-settings.update": { id: string; update: Record<string, unknown> };
 
-  /** Settings and actions sync events */
+  
   "chats.lock": { id: string; locked: boolean };
   "settings.update":
     | { setting: "unarchiveChats"; value: boolean }
@@ -212,7 +212,7 @@ export interface BaileysEventEmitter {
     event: T,
     arg: BaileysEventMap[T],
   ): boolean;
-  /** Process events in a batched callback. Each event fires individually (no buffering in bridge mode). */
+  
   process(
     handler: (events: Partial<BaileysEventMap>) => void | Promise<void>,
   ): void;

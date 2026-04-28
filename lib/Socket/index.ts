@@ -85,7 +85,7 @@ function noopKeyStore(logger: ILogger) {
   };
 }
 
-/** Build the signalRepository object that delegates to the bridge */
+
 function makeSignalRepository(ctx: SocketContext) {
   return {
     decryptMessage: async (opts: {
@@ -176,7 +176,7 @@ function makeSignalRepository(ctx: SocketContext) {
   };
 }
 
-/** Build the ws EventEmitter with auto-enable raw node forwarding */
+
 function makeWsEmitter(getClient: () => WasmWhatsAppClient | undefined) {
   const ws = new EventEmitter();
   let rawNodeEnabled = false;

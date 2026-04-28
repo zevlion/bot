@@ -2,7 +2,7 @@ import type { GroupMetadataResult } from "whatsapp-rust-bridge";
 import type { GroupMetadata } from "../Types/index.ts";
 import type { SocketContext } from "./types.ts";
 
-/** Convert bridge GroupMetadataResult to Baileys GroupMetadata */
+
 function bridgeGroupToMetadata(g: GroupMetadataResult): GroupMetadata {
   return {
     id: g.id,

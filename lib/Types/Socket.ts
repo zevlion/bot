@@ -19,23 +19,23 @@ export type PatchedMessageWithRecipientJID = proto.IMessage & {
 };
 
 export type SocketConfig = {
-  /** the WS url to connect to WA */
+  
   waWebSocketUrl: string | URL;
-  /** Fails the connection if the socket times out in this interval */
+  
   connectTimeoutMs: number;
-  /** Default timeout for queries, undefined for no timeout */
+  
   defaultQueryTimeoutMs: number | undefined;
-  /** ping-pong interval for WS connection */
+  
   keepAliveIntervalMs: number;
-  /** logger */
+  
   logger: ILogger;
-  /** version to connect with */
+  
   version: WAVersion;
-  /** override browser config */
+  
   browser: WABrowserDescription;
-  /** should events be emitted for actions done by this socket connection */
+  
   emitOwnEvents: boolean;
-  /** provide an auth state object to maintain the auth state */
+  
   auth: AuthenticationState;
   /**
    * Returns if a jid should be ignored,
@@ -43,7 +43,7 @@ export type SocketConfig = {
    * Messages from that jid will also not be decrypted
    * */
   shouldIgnoreJid: (jid: string) => boolean | undefined;
-  /** options for HTTP fetch requests */
+  
   options: RequestInit;
   /**
    * Cache configuration — tune TTL, capacity, or provide custom store backends.

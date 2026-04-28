@@ -2,7 +2,7 @@
  * Every bridge event type the adapter explicitly handles.
  */
 export const KNOWN_BRIDGE_EVENT_TYPES = new Set<string>([
-  /** Connection LifeCycle */
+  
   "connected",
   "disconnected",
   "qr",
@@ -16,27 +16,27 @@ export const KNOWN_BRIDGE_EVENT_TYPES = new Set<string>([
   "client_outdated",
   "temporary_ban",
   "qr_scanned_without_multidevice",
-  /** Messages */
+  
   "message",
   "receipt",
   "undecryptable_message",
-  /** Contacts */
+  
   "push_name_update",
   "contact_update",
   "contact_updated",
   "picture_update",
-  /**Presence */
+  
   "presence",
   "chat_presence",
-  /** Groups */
+  
   "group_update",
-  /** Chat State */
+  
   "archive_update",
   "pin_update",
   "mute_update",
   "star_update",
   "mark_chat_as_read_update",
-  /** Calls */
+  
   "incoming_call",
   // acknowledged but no Baileys equivalent
   "self_push_name_updated",
@@ -55,9 +55,9 @@ export const KNOWN_BRIDGE_EVENT_TYPES = new Set<string>([
    * already mutates its own caches when these arrive) */
   "delete_chat_update",
   "delete_message_for_me_update",
-  /** Generics */
+  
   "notification",
   "raw_node",
-  /** MEX (GraphQL) push notifications — routed by op_name downstream */
+  
   "mex_notification",
 ]);

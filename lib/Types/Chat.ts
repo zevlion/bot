@@ -60,7 +60,6 @@ export type WAPatchCreate = {
 };
 
 export type Chat = proto.IConversation & {
-  /** unix timestamp of when the last message was received in the chat */
   lastMessageRecvTimestamp?: number;
 };
 
@@ -76,7 +75,7 @@ export type ChatUpdate = Partial<
      * undefined if the condition is not yet fulfilled
      * */
     conditional: (bufferedData: BufferedEventData) => boolean | undefined;
-    /** last update time */
+
     timestamp?: number;
   }
 >;
@@ -97,7 +96,6 @@ export type ChatModification =
   | { pushNameSetting: string }
   | { pin: boolean }
   | {
-      /** mute for duration, or provide timestamp of mute to remove*/
       mute: number | null;
     }
   | {
@@ -135,9 +133,8 @@ export type ChatModification =
 
 export type InitialReceivedChatsState = {
   [jid: string]: {
-    /** the last message received from the other party */
     lastMsgRecvTimestamp?: number;
-    /** the absolute last message in the chat */
+
     lastMsgTimestamp: number;
   };
 };

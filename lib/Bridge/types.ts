@@ -18,7 +18,7 @@ export interface CanonicalDisconnected {
   type: "disconnected";
 }
 
-/** `qr` and `pairing_code` collapse here — both surface a code to display. */
+
 export interface CanonicalQR {
   type: "qr";
   code: string;
@@ -83,9 +83,9 @@ export interface CanonicalMessage {
   id: string;
   timestamp: number;
   pushName?: string;
-  /** LID counterpart of the sender for LID-addressed groups. */
+  
   participantAlt?: string;
-  /** LID counterpart of the chat (1:1 only) when the recipient is LID. */
+  
   remoteJidAlt?: string;
   messageProto: WAProto.IMessage;
 }
@@ -130,7 +130,7 @@ export interface CanonicalChatPresence {
   state: string;
 }
 
-/** Participant info as carried inside an event-time group action. */
+
 export interface CanonicalGroupParticipant {
   jid: string;
   phoneNumber?: string;
@@ -168,7 +168,7 @@ export type CanonicalGroupAction =
   | { type: "delete"; reason?: string }
   | { type: "link"; linkType: string }
   | { type: "unlink"; unlinkType: string; unlinkReason?: string }
-  /** Catch-all for action types the adapter doesn't recognize yet. */
+  
   | { type: "unknown"; rawType: string };
 
 export interface CanonicalGroupUpdate {
@@ -224,9 +224,9 @@ export type CanonicalCallActionType =
 export interface CanonicalCallAction {
   type: CanonicalCallActionType;
   callId: string;
-  /** Only populated when `type === 'offer'`. */
+  
   callerPn?: string;
-  /** Only populated when `type === 'offer'`. */
+  
   isVideo?: boolean;
 }
 
@@ -283,7 +283,7 @@ export interface CanonicalMexNotification {
 export interface CanonicalNoop {
   type: "noop";
   bridgeType: string;
-  /** Optional context for logging only. */
+  
   detail?: string;
 }
 

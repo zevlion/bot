@@ -8,6 +8,9 @@ import {
 } from "../lib";
 import P from "pino";
 import process from "node:process";
+import calls from "./calls";
+import serialize from "./serialize";
+import { loadCommands, matchCommand } from "./plugin";
 
 const logger = P({
   level: "trace",
@@ -39,6 +42,9 @@ const question = (text: string) =>
 
 const startSock = async () => {
   const state = await useBridgeStore("auth");
+  const cmd = await loadCommands();
+
+  let pairingRequested = false;
 
   const sock = makeWASocket({
     logger,
@@ -54,6 +60,7 @@ const startSock = async () => {
     if (events["connection.update"]) {
       const update = events["connection.update"];
       const { connection, lastDisconnect, qr } = update;
+
       if (connection === "close") {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
         if (statusCode === DisconnectReason.loggedOut) {
@@ -62,72 +69,38 @@ const startSock = async () => {
       }
 
       if (qr && !sock.isLoggedIn) {
+        pairingRequested = true;
         const phoneNumber = await question("Please enter your phone number:\n");
         const code = await sock.requestPairingCode(phoneNumber);
         console.log(`Pairing code: ${code}`);
+      }
+
+      if (connection === "open") {
+        console.log(
+          `[plugin] Loaded ${cmd.commands.length} command(s) from ${cmd.files.length} file(s)`,
+        );
+        console.log("Connected to WhatsApp");
       }
 
       logger.debug(update, "connection update");
     }
 
     if (events["call"]) {
-      logger.debug(events["call"], "call event fired");
+      await calls(events.call);
     }
 
     if (events["messages.upsert"]) {
       const upsert = events["messages.upsert"];
-      logger.debug(upsert, "messages.upsert fired");
-
-      if (upsert.requestId) {
-        logger.debug(upsert, "placeholder request message received");
-      }
 
       if (upsert.type === "notify") {
-        for (const msg of upsert.messages) {
-          if (
-            msg.message?.conversation ||
-            msg.message?.extendedTextMessage?.text
-          ) {
-            const text = (
-              msg.message?.conversation ||
-              msg.message?.extendedTextMessage?.text
-            )
-              ?.toLowerCase()
-              .trim();
-            if (text == "onDemandHistSync") {
-              const messageId = await sock.fetchMessageHistory(
-                50,
-                msg.key,
-                msg.messageTimestamp!,
-              );
-              logger.debug(
-                { id: messageId },
-                "requested on-demand history resync",
-              );
-            }
+        for (const raw of upsert.messages) {
+          const msg = serialize(raw, sock);
+          if (!msg || !msg.body) continue;
 
-            if (text === "ping") {
-              const start = Date.now();
-              const i = await sock.sendMessage(msg.key.remoteJid!, {
-                text: "Ping " + msg.key.id,
-              });
-              const end = Date.now();
-              await sock.sendMessage(msg.key.remoteJid!, {
-                edit: i?.key!,
-                text: `\`\`\`Pong ${end - start} ms\`\`\``,
-              });
-            }
+          const cmd = matchCommand(msg);
+          if (cmd) {
+            await cmd.func(msg);
           }
-        }
-      }
-    }
-
-    if (events["messages.update"]) {
-      logger.debug(events["messages.update"], "messages.update fired");
-
-      for (const { update } of events["messages.update"]) {
-        if (update.pollUpdates) {
-          logger.debug({ pollUpdates: update.pollUpdates }, "got poll update");
         }
       }
     }

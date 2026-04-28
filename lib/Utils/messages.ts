@@ -726,7 +726,7 @@ export const generateWAMessageFromContent = (
     }
 
     if (contextInfo && innerMessage[key]) {
-      /* @ts-ignore */
+      //@ts-ignore
       innerMessage[key].contextInfo = contextInfo;
     }
   }
@@ -741,7 +741,6 @@ export const generateWAMessageFromContent = (
     // newsletters don't support ephemeral messages
     !isJidNewsletter(jid)
   ) {
-    /* @ts-ignore */
     innerMessage[key].contextInfo = {
       ...((innerMessage[key] as Record<string, unknown>).contextInfo as Record<
         string,
@@ -784,7 +783,6 @@ export const generateWAMessage = async (
   );
 };
 
-/** Get the key to access the true type of content */
 export const getContentType = (content: proto.IMessage | undefined) => {
   if (content) {
     const keys = Object.keys(content);
@@ -1125,7 +1123,6 @@ export function getAggregateVotesInPollMessage(
   return Object.values(voteHashMap);
 }
 
-/** Get the author of a message key */
 function getKeyAuthor(key: proto.IMessageKey, meId?: string): string {
   return (key.fromMe ? meId : key.participant || key.remoteJid) || "unknown";
 }

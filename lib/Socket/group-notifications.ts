@@ -45,7 +45,7 @@ export type GroupNotificationDomainEvent =
   | { name: "groups.update"; payload: BaileysEventMap["groups.update"] }
   | null;
 
-/** Build the upstream-style high-level event for a canonical group update. */
+
 export const buildGroupNotificationDomainEvent = (
   notification: CanonicalGroupUpdate,
 ): GroupNotificationDomainEvent => {
@@ -123,7 +123,7 @@ export const buildGroupNotificationDomainEvent = (
 interface StubRecipe {
   stubType: number;
   stubParams: string[];
-  /** Disambiguator within the notification (used in `key.id`). */
+  
   idSuffix: string;
 }
 

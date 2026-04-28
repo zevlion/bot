@@ -2,7 +2,7 @@
   "name": "bot",
   "version": "0.1",
   "author": "PhilomaticTeche",
-  "main": "src/main.ts",
+  "main": "client/index.ts",
   "devDependencies": {
     "@types/bun": "latest",
     "@types/node": "^25.6.0",
@@ -18,6 +18,6 @@
   },
   "license": "MIT",
   "scripts": {
-    "start": "bun src/main.ts"
+    "start": "bun client/index.ts"
   }
 }

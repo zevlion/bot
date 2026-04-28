@@ -15,17 +15,17 @@
 export const isObject = (x: unknown): x is Record<string, unknown> =>
 	typeof x === 'object' && x !== null && !Array.isArray(x)
 
-/** Treat any non-string as missing rather than coercing (no `String(x)`). */
+
 export const asString = (x: unknown): string | undefined => (typeof x === 'string' ? x : undefined)
 
-/** Treat any non-number (including booleans, NaN) as missing. */
+
 export const asNumber = (x: unknown): number | undefined =>
 	typeof x === 'number' && Number.isFinite(x) ? x : undefined
 
-/** Strict bool — does not coerce truthy values like `1` or `'true'`. */
+
 export const asBool = (x: unknown): boolean | undefined => (typeof x === 'boolean' ? x : undefined)
 
-/** Same as `asBool` but defaults to `false` for missing/invalid input. */
+
 export const asBoolOr = (x: unknown, fallback: boolean): boolean => asBool(x) ?? fallback
 
 /**
@@ -42,17 +42,17 @@ export interface BridgeJid {
 	integrator?: number
 }
 
-/** Type guard for the bridge's `Jid` shape. Required fields only. */
+
 export const isBridgeJid = (x: unknown): x is BridgeJid =>
 	isObject(x) && typeof x.user === 'string' && typeof x.server === 'string'
 
-/** `null`-tolerant `BridgeJid` extractor — bridge payloads sometimes carry `null`. */
+
 export const asBridgeJid = (x: unknown): BridgeJid | undefined => (isBridgeJid(x) ? x : undefined)
 
-/** Stringify a bridge JID into the canonical `user@server` form. Drops device/agent. */
+
 export const bridgeJidToString = (j: BridgeJid): string => `${j.user}@${j.server}`
 
-/** Combined: validate & stringify in one step. Returns `undefined` on invalid input. */
+
 export const asJidString = (x: unknown): string | undefined => {
 	const j = asBridgeJid(x)
 	return j ? bridgeJidToString(j) : undefined

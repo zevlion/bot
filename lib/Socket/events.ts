@@ -23,7 +23,7 @@ import type { SocketContext } from "./types.ts";
 const DEF_CALLBACK_PREFIX = "CB:";
 const DEF_TAG_PREFIX = "TAG:";
 
-/** Emit CB: pattern events on the ws EventEmitter for retrocompat. */
+
 const emitCBEvents = (ctx: SocketContext, node: BinaryNode) => {
   const { ws } = ctx;
   const l0 = node.tag;

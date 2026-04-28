@@ -30,7 +30,7 @@ export enum ReachoutTimelockEnforcementType {
 
 export type ReachoutTimelockState = {
   isActive?: boolean;
-  /** Unix-millis Date when the cooldown lifts. Absent when `isActive=false`. */
+  
   timeEnforcementEnds?: Date;
   enforcementType?: ReachoutTimelockEnforcementType;
 };

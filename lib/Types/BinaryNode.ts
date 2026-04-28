@@ -1,4 +1,3 @@
-/** Binary XML node — the low-level protocol unit exchanged with WhatsApp servers. */
 export type BinaryNode = {
   tag: string;
   attrs: { [key: string]: string };

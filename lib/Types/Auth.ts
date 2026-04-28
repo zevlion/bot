@@ -34,9 +34,8 @@ export type LTHashState = {
 };
 
 export type AccountSettings = {
-  /** unarchive chats when a new message is received */
   unarchiveChats: boolean;
-  /** the default mode to start new conversations with */
+
   defaultDisappearingMode?: Pick<
     proto.IConversation,
     "ephemeralExpiration" | "ephemeralSettingTimestamp"
@@ -52,11 +51,8 @@ export type AccountSettings = {
  * may reference them.
  */
 export type AuthenticationCreds = {
-  /** Paired user identity — set on pair_success, cleared on logout. */
   me?: Contact;
-  /** Whether the client has completed pairing. */
   registered: boolean;
-  /** Device platform (e.g. "smbi", "smba"). Set on pair_success. */
   platform?: string;
   noiseKey?: KeyPair;
   pairingEphemeralKeyPair?: KeyPair;
@@ -83,9 +79,7 @@ export type AuthenticationCreds = {
 };
 
 export type AuthenticationState = {
-  /** Bridge storage for persistent WASM state. Auto-created by useMultiFileAuthState. */
   store?: JsStoreCallbacks & {
-    /** Flush all pending debounced writes to disk. Called automatically on disconnect. */
     flush?(): Promise<void>;
   };
 };

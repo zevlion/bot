@@ -4,7 +4,7 @@ import { Boom } from "./boom.ts";
 const baileysVersion = DEFAULT_CONNECTION_CONFIG.version;
 import type { AuthenticationCreds, WAVersion } from "../Types/index.ts";
 
-/** unix timestamp of a date in seconds */
+
 export const unixTimestampSeconds = (date: Date = new Date()) =>
   Math.floor(date.getTime() / 1000);
 

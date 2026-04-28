@@ -19,7 +19,7 @@ import {
   toUnixSeconds,
 } from "./primitives.ts";
 
-/** Result is `null` on unrecoverable shape mismatch — caller should drop the event. */
+
 export const adaptBridgeEvent = (
   event: WhatsAppEvent,
   logger?: ILogger,

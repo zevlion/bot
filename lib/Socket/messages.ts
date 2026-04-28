@@ -20,7 +20,7 @@ import {
 import { jidNormalizedUser } from "../Utils/index.ts";
 import type { SocketContext } from "./types.ts";
 
-/** Extract the media content from a WAMessage (image, video, audio, document, sticker) */
+
 function getMediaContent(content: WAMessageContent | null | undefined) {
   return (
     content?.imageMessage ||
