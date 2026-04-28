@@ -41,7 +41,7 @@ const question = (text: string) =>
   new Promise<string>((resolve) => rl.question(text, resolve));
 
 const startSock = async () => {
-  const state = await useBridgeStore("auth");
+  const state = await useBridgeStore();
   const cmd = await loadCommands();
 
   let pairingRequested = false;
