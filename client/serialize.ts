@@ -1,39 +1,28 @@
-import type { WAMessage, WASocket } from "../lib";
+import { isJidGroup, type WAMessage, type WASocket } from "../lib";
 
 export type Client = WASocket;
 
 export interface SerializedMessage {
-  
   raw: WAMessage;
 
-  
   client: Client;
 
-  
   remoteJid: string;
 
-  
   id: string;
 
-  
   fromMe: boolean;
 
-  
   isGroup: boolean;
 
-  
   sender: string;
 
-  
   body: string;
 
-  
   timestamp: number;
 
-  
   args: string[];
 
-  
   command: string;
 }
 
@@ -44,7 +33,7 @@ export default function (
   const remoteJid = msg.key.remoteJid;
   if (!remoteJid) return null;
 
-  const isGroup = remoteJid.endsWith("@g.us");
+  const isGroup = isJidGroup(remoteJid)!;
   const fromMe = msg.key.fromMe ?? false;
 
   // In groups the participant field holds the actual sender

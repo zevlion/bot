@@ -1,11 +1,13 @@
 import type { SerializedMessage } from "./serialize";
-import { join } from "node:path";
+import { join, basename, extname } from "node:path";
 
 export interface Command {
   pattern?: string | RegExp;
   alias?: string[];
   fromMe?: boolean;
   isGroup?: boolean;
+  category?: string;
+  dontAddToCommandList?: boolean;
   func: (msg: SerializedMessage) => Promise<any | void>;
 }
 
@@ -13,6 +15,10 @@ const commands: Command[] = [];
 
 export function registerCommand(cmd: Command): void {
   commands.push(cmd);
+}
+
+export function getCommands(): Command[] {
+  return commands;
 }
 
 export function matchCommand(msg: SerializedMessage): Command | undefined {
@@ -39,19 +45,18 @@ export async function loadCommands(
   dir: string = join(import.meta.dir, "commands"),
 ) {
   const glob = new Bun.Glob("**/*.ts");
-
   const files = await Array.fromAsync(glob.scan({ cwd: dir, absolute: true }));
 
-  await Promise.all(
-    files.map((file) =>
-      import(file).catch((err) =>
-        console.error(`[plugin] Failed to load command file: ${file}\n`, err),
-      ),
-    ),
-  );
+  for (const file of files) {
+    const category = basename(file, extname(file));
+    const before = commands.length;
+    await import(file).catch((err) =>
+      console.error(`[plugin] Failed to load command file: ${file}\n`, err),
+    );
+    for (let i = before; i < commands.length; i++) {
+      commands[i]!.category = category;
+    }
+  }
 
-  return {
-    commands,
-    files,
-  };
+  return { commands, files };
 }

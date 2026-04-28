@@ -741,6 +741,7 @@ export const generateWAMessageFromContent = (
     // newsletters don't support ephemeral messages
     !isJidNewsletter(jid)
   ) {
+    //@ts-ignore
     innerMessage[key].contextInfo = {
       ...((innerMessage[key] as Record<string, unknown>).contextInfo as Record<
         string,
