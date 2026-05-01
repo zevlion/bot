@@ -4,8 +4,6 @@
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
     "types": ["bun"],
 
     "moduleResolution": "bundler",
@@ -21,6 +19,7 @@
 
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+    "rootDirs": ["client", "lib"]
   }
 }
