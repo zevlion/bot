@@ -16,5 +16,5 @@ proxy_url = ""
 auto_download = false # ["image", "video"]
 
 [features]
-enable_logs = true  # Disable for better performance
+enable_logs = false  # Disable for better performance
 bot_name = "zєνвσт"
