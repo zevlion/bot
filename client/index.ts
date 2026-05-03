@@ -9,9 +9,7 @@ import { config, logger } from "./util";
 import { getCommands, loadCommands, matchCommand } from "./plugin";
 import { autoDownload } from "./features";
 
-config.features?.enable_logs
-	? (logger.level = "trace")
-	: (logger.level = "silent");
+logger.level = config.features?.enable_logs ? "trace" : "silent";
 
 const rl = readline.createInterface({
 	input: process.stdin,

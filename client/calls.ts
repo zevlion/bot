@@ -1,3 +1,5 @@
 import type { WACallEvent } from "../lib";
 
-export default async (ev?: WACallEvent[]) => {};
+export default async (ev?: WACallEvent[]) => {
+	console.log(ev);
+};
