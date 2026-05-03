@@ -17,6 +17,6 @@ export const autoDownload = async (message: WAMessage, sock: WASocket) => {
 			await writeFile(filePath, buffer);
 
 			return filePath;
-		} catch (error) {}
+		} catch {}
 	}
 };
