@@ -96,7 +96,7 @@ const startSock = async () => {
 				for (const raw of upsert.messages) {
 					const msg = serialize(raw, sock);
 
-					if (!msg || !msg.body) continue;
+					if (!msg || !msg.body || !msg.fromMe) continue;
 
 					const eventCommands = getCommands().filter(cmd => cmd.event === true);
 					for (const eventCmd of eventCommands) {
