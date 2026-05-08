@@ -3,14 +3,14 @@
 	"author": "Zevlion",
 	"devDependencies": {
 		"@types/bun": "latest",
-		"@types/node": "^25.6.0",
-		"oxfmt": "^0.47.0",
-		"oxlint": "^1.62.0",
+		"@types/node": "^25.6.2",
+		"oxfmt": "^0.48.0",
+		"oxlint": "^1.63.0",
 		"typescript": "^6.0.3"
 	},
 	"dependencies": {
 		"audio-decode": "^3.10.1",
-		"axios": "^1.15.2",
+		"axios": "^1.16.0",
 		"filetype": "^0.1.0",
 		"music-metadata": "^11.12.3",
 		"pino": "^10.3.1",
