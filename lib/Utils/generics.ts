@@ -1,4 +1,4 @@
-import { Buffer } from "node:buffer";
+import { Buffer } from "buffer";
 import { DEFAULT_CONNECTION_CONFIG } from "../Defaults/index.ts";
 import { Boom } from "./boom.ts";
 const baileysVersion = DEFAULT_CONNECTION_CONFIG.version;

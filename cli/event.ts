@@ -1,5 +1,5 @@
-import { join } from "node:path";
-import { writeFile, mkdir } from "node:fs/promises";
+import { join } from "path";
+import { writeFile, mkdir } from "fs/promises";
 import { fileTypeFromBuffer } from "file-type";
 import { config, isMediaMessage } from "./util";
 import {

@@ -1,6 +1,6 @@
-import os from "node:os";
-import { join } from "node:path";
-import { readdir, stat, rm, mkdir } from "node:fs/promises";
+import os from "os";
+import { join } from "path";
+import { readdir, stat, rm, mkdir } from "fs/promises";
 import { registerCommand } from "../cmd";
 import { runtime, formatBytes } from "./menu";
 

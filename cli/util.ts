@@ -1,8 +1,8 @@
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { promisify } from "node:util";
-import { exec } from "node:child_process";
-import { writeFileSync, unlinkSync, readFileSync } from "node:fs";
+import { join } from "path";
+import { tmpdir } from "os";
+import { promisify } from "util";
+import { exec } from "child_process";
+import { writeFileSync, unlinkSync, readFileSync } from "fs";
 import { parse } from "smol-toml";
 import { getAudioDuration, type WAMessage } from "../lib";
 
@@ -12,21 +12,11 @@ interface BotConfig {
 		primary_platform: string;
 		supported_platform: string;
 	};
-	auth: {
-		strategy: "pairing_code" | "qr";
-		qr_timeout_ms: number;
-	};
-	connection: {
-		reconnect_on_failure: boolean;
-		max_retries: number;
-		proxy_url: string;
-	};
 	media: {
 		auto_download: boolean;
 		auto_save_status: boolean;
 	};
 	features: {
-		enable_logs: boolean;
 		bot_name: string;
 	};
 }
@@ -36,18 +26,16 @@ const execPromise = promisify(exec);
 const rawConfig = readFileSync("./config.toml", "utf-8");
 export const config = parse(rawConfig) as unknown as BotConfig;
 
-interface MediaOutput {
-	buffer: Buffer;
-	mimetype: string;
-	seconds?: number;
-}
-
 async function processMedia(
 	input: string | Buffer,
 	outputExt: string,
 	mimetype: string,
-	ffmpegArgs: string
-): Promise<MediaOutput> {
+	ffmpegArgs: string,
+): Promise<{
+	buffer: Buffer;
+	mimetype: string;
+	seconds?: number;
+}> {
 	const tempInput = join(tmpdir(), `input_${Date.now()}`);
 	const tempOutput = join(tmpdir(), `output_${Date.now()}.${outputExt}`);
 
@@ -60,7 +48,7 @@ async function processMedia(
 		}
 
 		await execPromise(
-			`ffmpeg -i "${tempInput}" ${ffmpegArgs} -y "${tempOutput}"`
+			`ffmpeg -i "${tempInput}" ${ffmpegArgs} -y "${tempOutput}"`,
 		);
 
 		const buffer = readFileSync(tempOutput);
@@ -69,7 +57,7 @@ async function processMedia(
 		return {
 			buffer,
 			mimetype,
-			seconds
+			seconds,
 		};
 	} finally {
 		try {
@@ -81,27 +69,39 @@ async function processMedia(
 	}
 }
 
-export async function toMp3(input: string | Buffer): Promise<MediaOutput> {
+export async function toMp3(input: string | Buffer): Promise<{
+	buffer: Buffer;
+	mimetype: string;
+	seconds?: number;
+}> {
 	return processMedia(input, "mp3", "audio/mpeg", "-vn -ab 192k -ar 44100");
 }
 
-export async function toPTT(
-	input: string | Buffer
-): Promise<MediaOutput & { ptt: true }> {
+export async function toPTT(input: string | Buffer): Promise<
+	{
+		buffer: Buffer;
+		mimetype: string;
+		seconds?: number;
+	} & { ptt: true }
+> {
 	const result = await processMedia(
 		input,
 		"ogg",
 		"audio/ogg; codecs=opus",
-		"-vn -c:a libopus -b:a 128k -vbr on"
+		"-vn -c:a libopus -b:a 128k -vbr on",
 	);
 
 	return {
 		ptt: true,
-		...result
+		...result,
 	};
 }
 
-export async function toMp4(input: string | Buffer): Promise<MediaOutput> {
+export async function toMp4(input: string | Buffer): Promise<{
+	buffer: Buffer;
+	mimetype: string;
+	seconds?: number;
+}> {
 	const tempInput = join(tmpdir(), `input_${Date.now()}`);
 	const tempOutput = join(tmpdir(), `output_${Date.now()}.mp4`);
 
@@ -113,14 +113,14 @@ export async function toMp4(input: string | Buffer): Promise<MediaOutput> {
 		}
 
 		await execPromise(
-			`ffmpeg -i "${tempInput}" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -pix_fmt yuv420p -y "${tempOutput}"`
+			`ffmpeg -i "${tempInput}" -c:v libx264 -preset fast -crf 23 -c:a aac -b:a 128k -pix_fmt yuv420p -y "${tempOutput}"`,
 		);
 
 		const buffer = readFileSync(tempOutput);
 
 		return {
 			buffer,
-			mimetype: "video/mp4"
+			mimetype: "video/mp4",
 		};
 	} finally {
 		try {
@@ -153,8 +153,8 @@ export const isMediaMessage = (msg: WAMessage) => {
 		"videoMessage",
 		"audioMessage",
 		"documentMessage",
-		"stickerMessage"
+		"stickerMessage",
 	];
 
-	return mediaKeys.some(key => Object.hasOwn(message, key));
+	return mediaKeys.some((key) => Object.hasOwn(message, key));
 };

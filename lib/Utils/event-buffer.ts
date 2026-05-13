@@ -1,4 +1,4 @@
-import EventEmitter from "node:events";
+import EventEmitter from "events";
 import type { BaileysEventEmitter, BaileysEventMap } from "../Types/index.ts";
 
 /**

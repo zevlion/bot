@@ -37,7 +37,7 @@ export type WAGenericMediaMessage =
 	| proto.Message.IStickerMessage;
 export const WAMessageStubType = proto.WebMessageInfo.StubType;
 export const WAMessageStatus = proto.WebMessageInfo.Status;
-import { Buffer } from "node:buffer";
+import { Buffer } from "buffer";
 import type { ILogger } from "../Utils/logger.ts";
 export type WAMediaPayloadURL = { url: URL | string };
 export type WAMediaPayloadStream = { stream: Readable };

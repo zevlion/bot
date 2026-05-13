@@ -1,5 +1,5 @@
 import type { SerializedMessage } from "./serialize";
-import { join, basename, extname } from "node:path";
+import { join, basename, extname } from "path";
 
 export interface Command {
 	pattern?: string | RegExp;

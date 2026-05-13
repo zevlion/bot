@@ -1,6 +1,6 @@
-import { Buffer } from "node:buffer";
-import { randomBytes } from "node:crypto";
-import { EventEmitter } from "node:events";
+import { Buffer } from "buffer";
+import { randomBytes } from "crypto";
+import { EventEmitter } from "events";
 import {
 	createWhatsAppClient,
 	type DevicePlatformType,
