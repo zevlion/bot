@@ -1,9 +1,9 @@
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
+import { exec } from "child_process";
+import { promisify } from "util";
 import axios from "axios";
-import { writeFileSync, unlinkSync, existsSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { writeFileSync, unlinkSync, existsSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 
 import { registerCommand } from "../cmd";
 import { toMp4, toPTT } from "../util";

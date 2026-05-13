@@ -1,16 +1,16 @@
 import sharp from "sharp";
-import { Buffer } from "node:buffer";
-import { execFile } from "node:child_process";
-import { createReadStream, promises as fs } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { Readable } from "node:stream";
+import { Buffer } from "buffer";
+import { execFile } from "child_process";
+import { createReadStream, promises as fs } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { Readable } from "stream";
 import { Boom } from "./boom.ts";
 import type { HeadersInit } from "bun";
 import type { ILogger } from "./logger.ts";
 import type { WAMediaUpload } from "../Types/index.ts";
 import type { IAudioMetadata } from "music-metadata";
-import type { ReadableStream as WebReadableStream } from "node:stream/web";
+import type { ReadableStream as WebReadableStream } from "stream/web";
 
 const randomId = () => globalThis.crypto.randomUUID();
 

@@ -1,6 +1,6 @@
-import os from "node:os";
-import { join } from "node:path";
-import { readFileSync } from "node:fs";
+import os from "os";
+import { join } from "path";
+import { readFileSync } from "fs";
 import { registerCommand, getCommands } from "../cmd";
 import type { Command } from "../cmd";
 import type { SerializedMessage } from "../serialize";

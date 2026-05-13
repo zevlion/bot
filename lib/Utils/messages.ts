@@ -1,5 +1,5 @@
-import { Buffer } from "node:buffer";
-import { Readable } from "node:stream";
+import { Buffer } from "buffer";
+import { Readable } from "stream";
 import type { ReadableStream as WebReadableStream } from "stream/web";
 import type {
 	UploadMediaResult,

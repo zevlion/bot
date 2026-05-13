@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHmac } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac } from "crypto";
 
 /**
  * Safe to use only in Node.js / Bun. In browsers, omit this and the bridge
