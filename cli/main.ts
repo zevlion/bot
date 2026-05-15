@@ -2,9 +2,6 @@ import { Boom, makeWASocket, useBridgeStore, DisconnectReason } from "../lib";
 import process from "process";
 import readline from "readline";
 import * as qrcode from "qrcode-terminal";
-import serialize from "./serialize";
-import { getCommands, loadCommands, matchCommand } from "./cmd";
-import { autoDownload, autoSaveStatus } from "./event";
 
 interface CliArgs {
 	help: boolean;
@@ -88,7 +85,6 @@ const question = (text: string) =>
 
 const startSock = async () => {
 	const auth = { store: await useBridgeStore() };
-	await loadCommands();
 
 	const strategy = cli.qrcode ? "qr" : cli.pair ? "pairing_code" : "qr";
 
@@ -152,33 +148,6 @@ const startSock = async () => {
 			if (connection === "open") {
 				console.log("Connected.");
 				retryCount = 0;
-			}
-		}
-
-		if (events["messages.upsert"]) {
-			const upsert = events["messages.upsert"];
-			if (upsert.type === "notify") {
-				for (const raw of upsert.messages) {
-					const msg = serialize(raw, sock);
-					if (!msg || !msg.body || !msg.fromMe) continue;
-
-					const eventCommands = getCommands().filter(
-						(cmd) => cmd.event === true,
-					);
-					for (const eventCmd of eventCommands) {
-						await eventCmd.func(msg);
-					}
-
-					const cmd = matchCommand(msg);
-					if (cmd && !cmd.event) {
-						await cmd.func(msg);
-					}
-
-					await Promise.all([
-						autoDownload(raw, sock),
-						autoSaveStatus(raw, sock),
-					]);
-				}
 			}
 		}
 	});
