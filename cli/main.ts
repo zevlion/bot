@@ -1,4 +1,4 @@
-import { Boom, makeWASocket, useBridgeStore, DisconnectReason } from "../lib";
+import { Boom, makeWASocket, useBridgeStore, DisconnectReason } from "zevbot";
 import process from "process";
 import readline from "readline";
 import * as qrcode from "qrcode-terminal";
