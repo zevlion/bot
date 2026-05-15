@@ -19,48 +19,30 @@ jobs:
         run: |
           echo "Validating devcontainer.json..."
 
-          # Check the file exists
           if [ ! -f ".devcontainer/devcontainer.json" ]; then
             echo "❌ .devcontainer/devcontainer.json not found"
             exit 1
           fi
 
-          # Check it's valid JSON (strips comments first using Node.js)
-          node -e "
-            const fs = require('fs');
-            const content = fs.readFileSync('.devcontainer/devcontainer.json', 'utf8');
-            // Strip single-line and block comments (JSON with comments is valid in devcontainer spec)
-            const stripped = content
-              .replace(/\/\/[^\n]*/g, '')
-              .replace(/\/\*[\s\S]*?\*\//g, '');
-            try {
-              JSON.parse(stripped);
-              console.log('✅ devcontainer.json is valid JSON');
-            } catch (e) {
-              console.error('❌ Invalid JSON:', e.message);
-              process.exit(1);
-            }
-          "
+          python3 << 'EOF'
+          import json, sys
 
-          # Check required fields
-          node -e "
-            const fs = require('fs');
-            const content = fs.readFileSync('.devcontainer/devcontainer.json', 'utf8');
-            const stripped = content
-              .replace(/\/\/[^\n]*/g, '')
-              .replace(/\/\*[\s\S]*?\*\//g, '');
-            const config = JSON.parse(stripped);
+          with open('.devcontainer/devcontainer.json', 'r') as f:
+              content = f.read()
 
-            const hasImage = !!config.image;
-            const hasBuild = !!config.build;
-            const hasDockerCompose = !!config.dockerComposeFile;
+          try:
+              config = json.loads(content)
+              print('✅ devcontainer.json is valid JSON')
+          except json.JSONDecodeError as e:
+              print(f'❌ Invalid JSON: {e}')
+              sys.exit(1)
 
-            if (!hasImage && !hasBuild && !hasDockerCompose) {
-              console.error('❌ devcontainer.json must define one of: image, build, or dockerComposeFile');
-              process.exit(1);
-            }
-            console.log('✅ devcontainer.json has a valid container source');
-          "
+          if not any(k in config for k in ('image', 'build', 'dockerComposeFile')):
+              print('❌ devcontainer.json must define one of: image, build, or dockerComposeFile')
+              sys.exit(1)
+
+          print('✅ devcontainer.json has a valid container source')
+          EOF
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
