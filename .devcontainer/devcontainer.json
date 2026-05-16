@@ -3,12 +3,12 @@
 	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
 
 	"remoteEnv": {
-		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
+		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
 	},
 
 	"mounts": [
 		"source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind,consistency=cached",
-		"source=${localEnv:HOME}/.gnupg,target=/root/.gnupg,type=bind,consistency=cached",
+		"source=${localEnv:HOME}/.gnupg,target=/root/.gnupg,type=bind,consistency=cached"
 	],
 
 	"postCreateCommand": "apt-get update && apt-get install -y ffmpeg libwebp-dev curl bash unzip && curl -fsSL https://bun.sh/install | bash",
@@ -18,10 +18,10 @@
 			"extensions": ["esbenp.prettier-vscode", "yy0931.vscode-sqlite3-editor"],
 			"settings": {
 				"editor.defaultFormatter": "esbenp.prettier-vscode",
-				"editor.formatOnSave": true,
-			},
-		},
+				"editor.formatOnSave": true
+			}
+		}
 	},
 
-	"remoteUser": "root",
+	"remoteUser": "root"
 }
