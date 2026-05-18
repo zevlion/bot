@@ -45,6 +45,91 @@ export type GroupNotificationDomainEvent =
 	| { name: "groups.update"; payload: BaileysEventMap["groups.update"] }
 	| null;
 
+/**
+ * Whitelist of `RequestJoinMethod` values upstream Baileys recognizes.
+ * The bridge's `MembershipRequestMethod` is a wire-string enum that may
+ * grow with new variants; validating here keeps an unknown server-side
+ * method from leaking into consumer code as a typed but invalid value.
+ */
+const KNOWN_REQUEST_METHODS = new Set<
+	NonNullable<BaileysEventMap["group.join-request"]["method"]>
+>(["invite_link", "linked_group_join", "non_admin_add"]);
+
+const validateRequestMethod = (
+	raw: string | undefined
+): BaileysEventMap["group.join-request"]["method"] => {
+	if (!raw) return undefined;
+	return KNOWN_REQUEST_METHODS.has(
+		raw as NonNullable<BaileysEventMap["group.join-request"]["method"]>
+	)
+		? (raw as BaileysEventMap["group.join-request"]["method"])
+		: undefined;
+};
+
+export const buildGroupJoinRequestEvents = (
+	notification: CanonicalGroupUpdate
+): BaileysEventMap["group.join-request"][] => {
+	const action = notification.action;
+	const author = notification.author;
+	const authorPn = notification.authorPn;
+
+	if (action.type === "membershipApprovalRequest") {
+		// Single user requesting join. The author IS the requester, so
+		// without a real author there is no addressable participant —
+		// dropping the event beats emitting one with `participant: ''`.
+		if (!author) return [];
+		return [
+			{
+				id: notification.groupJid,
+				author,
+				authorPn,
+				participant: author,
+				participantPn: authorPn,
+				action: "created",
+				method: validateRequestMethod(action.requestMethod)
+			}
+		];
+	}
+
+	if (action.type === "createdMembershipRequests") {
+		// Batched fanout (typically community parent → linked group). Emit
+		// one event per request entry; skip entries without a participant
+		// JID rather than synthesizing blanks.
+		if (!author) return [];
+		const method = validateRequestMethod(action.requestMethod);
+		return action.requests
+			.filter(req => !!req.jid)
+			.map(req => ({
+				id: notification.groupJid,
+				author,
+				authorPn,
+				participant: req.jid,
+				participantPn: req.phoneNumber,
+				action: "created",
+				method
+			}));
+	}
+
+	if (action.type === "revokedMembershipRequests") {
+		// Admin revoked one or more pending requests. Method is unknown at
+		// this point (server doesn't echo the original method back).
+		if (!author) return [];
+		return action.participants
+			.filter(p => !!p.jid)
+			.map(p => ({
+				id: notification.groupJid,
+				author,
+				authorPn,
+				participant: p.jid,
+				participantPn: p.phoneNumber,
+				action: "revoked",
+				method: undefined
+			}));
+	}
+
+	return [];
+};
+
 export const buildGroupNotificationDomainEvent = (
 	notification: CanonicalGroupUpdate
 ): GroupNotificationDomainEvent => {
