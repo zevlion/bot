@@ -164,7 +164,7 @@ export const makeMessageMethods = (ctx: SocketContext) => ({
 		// (download uses directPath via Rust bridge, url is informational)
 		mediaContent.directPath = newDirectPath;
 
-		ctx.logger.debug(
+		ctx.logger?.debug(
 			{ directPath: newDirectPath, msgId: key.id },
 			"media reupload successful"
 		);
@@ -253,7 +253,7 @@ export const makeMessageMethods = (ctx: SocketContext) => ({
 		} else {
 			// delivered/sender/inactive receipts are sent automatically by the Rust bridge
 			// played/hist_sync/peer_msg require bridge-side support
-			ctx.logger.debug(
+			ctx.logger?.debug(
 				{ type, jid, count: messageIds.length },
 				"sendReceipt: type handled automatically by bridge or not yet supported"
 			);
@@ -278,7 +278,7 @@ export const makeMessageMethods = (ctx: SocketContext) => ({
 				await client.readMessages(readKeys);
 			}
 		} else {
-			ctx.logger.debug(
+			ctx.logger?.debug(
 				{ type, count: keys.length },
 				"sendReceipts: type handled automatically by bridge or not yet supported"
 			);

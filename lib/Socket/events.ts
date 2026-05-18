@@ -76,11 +76,15 @@ export const makeEventHandler = (
 ) => {
 	const { ev } = ctx;
 
-	const emitClose = (reason: string, statusCode: number) =>
+	const emitClose = (
+		reason: string,
+		statusCode: number,
+		data?: Record<string, unknown>
+	) =>
 		ev.emit("connection.update", {
 			connection: "close",
 			lastDisconnect: {
-				error: new Boom(reason, { statusCode }),
+				error: new Boom(reason, { statusCode, data }),
 				date: new Date()
 			}
 		} as Partial<ConnectionState>);
