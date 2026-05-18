@@ -8,7 +8,7 @@ import type { BodyInit } from "bun";
 
 interface TransportConfig {
 	waWebSocketUrl: string | URL;
-	logger: ILogger;
+	logger?: ILogger;
 	options?: RequestInit;
 }
 
@@ -80,7 +80,7 @@ export const makeTransport = (
 					"error",
 					event => {
 						if (ws !== newWs) return;
-						logger.error({ err: event }, "WebSocket error");
+						logger?.error({ err: event }, "WebSocket error");
 						if (!settled) {
 							settled = true;
 							reject(new Error("WebSocket connection failed"));

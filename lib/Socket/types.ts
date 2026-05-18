@@ -5,7 +5,7 @@ import type { ILogger } from "../Utils/logger.ts";
 
 export interface SocketContext {
 	ev: BaileysEventEmitter;
-	logger: ILogger;
+	logger?: ILogger;
 	fullConfig: SocketConfig;
 	getUser: () => { id?: string; lid?: string } | undefined;
 	setUser: (u: { id?: string; lid?: string }) => void;
