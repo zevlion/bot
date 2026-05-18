@@ -35,9 +35,9 @@ async function openDatabase(dbPath: string): Promise<DbAdapter> {
 }
 
 export async function useBridgeStore(
-	dbFile = "auth.db"
+	file = "session.db"
 ): Promise<NonNullable<AuthenticationState["store"]>> {
-	const db = await openDatabase(dbFile);
+	const db = await openDatabase(file);
 
 	db.exec(`PRAGMA journal_mode = WAL`);
 	db.exec(`PRAGMA synchronous = NORMAL`);
