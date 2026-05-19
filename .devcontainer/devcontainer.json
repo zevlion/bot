@@ -1,5 +1,5 @@
 {
-	"name": "ZevBot-Development",
+	"name": "ZevBot",
 	"image": "mcr.microsoft.com/devcontainers/base:noble",
 	"remoteEnv": {
 		"LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
