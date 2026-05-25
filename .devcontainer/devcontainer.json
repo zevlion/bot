@@ -14,7 +14,7 @@
     "mounts": [
         "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig_shared,type=bind,consistency=cached"
     ],
-    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y curl bash && rustup toolchain install nightly && rustup component add rustfmt clippy --toolchain nightly && curl -fsSL 'https://raw.githubusercontent.com/zevlion/rpm/refs/heads/master/scripts/linux-installer.sh?'$(date +%s) | bash && git config --global include.path /home/vscode/.gitconfig_shared",
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y curl bash && rustup toolchain install nightly && rustup component add rustfmt clippy --toolchain nightly && curl -fsSL 'https://raw.githubusercontent.com/zevlion/rpm/refs/heads/master/scripts/linux-installer.sh?'$(date +%s) | bash && git config --global include.path /home/vscode/.gitconfig_shared && mkdir -p /home/vscode/.gnupg && echo 'no-autostart' >> /home/vscode/.gnupg/gpg.conf",
     "customizations": {
         "vscode": {
             "extensions": [
