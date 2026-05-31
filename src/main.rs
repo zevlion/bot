@@ -16,7 +16,13 @@ use whatsapp_rust_ureq_http_client::UreqHttpClient;
 use cli::CliArgs;
 use ws::{WsState, ws_handler};
 
-#[tokio::main]
+/// Entry point.
+///
+/// Parses CLI arguments, sets up the auth directory and SQLite database path,
+/// optionally handles logout by deleting session files, registers a graceful
+/// shutdown handler, starts the Axum WebSocket server, and finally launches
+/// the WhatsApp session.
+#[tokio::main(name= "zevBot")]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = CliArgs::parse();
     let port = cli
@@ -70,6 +76,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Initializes and runs a WhatsApp bot session.
+///
+/// Builds a [`Bot`] using the provided CLI configuration, attaches an SQLite
+/// backend at `db_path`, and wires up an event handler that:
+/// - Logs and broadcasts QR codes (if `--qrcode` is set), pairing results,
+///   logouts, and disconnections over the given `events_tx` channel.
+/// - Serializes every event to JSON and forwards it on the same channel.
+///
+/// If a phone number was supplied via `--pair`, a pairing-code flow is
+/// initiated instead of QR-code pairing.
+///
+/// # Arguments
+/// * `db_path`   – Path to the SQLite database file for this session.
+/// * `cli`       – Parsed CLI arguments controlling session behaviour.
+/// * `events_tx` – Broadcast sender used to push event strings to WebSocket clients.
+///
+/// # Errors
+/// Returns an error if the store, bot, or underlying transport cannot be
+/// initialised, or if the session itself encounters a fatal error.
 async fn start_session(
     db_path: String,
     cli: CliArgs,
@@ -140,6 +165,14 @@ async fn start_session(
     Ok(())
 }
 
+/// Removes SQLite WAL and SHM sidecar files for the given database path.
+///
+/// Deletes `<db_path>-shm` and `<db_path>-wal` if they exist, allowing a
+/// clean shutdown without leaving stale journal files on disk. Missing files
+/// are silently ignored; other I/O errors are printed to stderr.
+///
+/// # Arguments
+/// * `db_path` – Base path of the SQLite database (without the `-shm`/`-wal` suffix).
 async fn cleanup_db(db_path: &str) {
     for suffix in ["-shm", "-wal"] {
         let path = format!("{db_path}{suffix}");
@@ -151,6 +184,15 @@ async fn cleanup_db(db_path: &str) {
     }
 }
 
+/// Waits for a process termination signal.
+///
+/// Resolves on whichever arrives first:
+/// - **Ctrl-C** (`SIGINT`) on all platforms.
+/// - **SIGTERM** on Unix platforms (compiled out on non-Unix targets, where
+///   this branch becomes a permanently pending future).
+///
+/// Intended for use with [`tokio::select!`] or [`tokio::spawn`] to trigger
+/// graceful shutdown logic.
 async fn shutdown_signal() {
     use tokio::signal;
 
